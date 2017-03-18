@@ -8,11 +8,10 @@ from   math                            import *
 import numpy                               as np
 import warnings
 from sklearn import preprocessing
-from Library_Paper_one                 import import_data, traditional_MTS
+from Library_Paper_one                 import traditional_MTS
 from itertools import izip
 import time
-Paper = 'paper_2'
-
+Paper = 'paper_1'
 ##########################################################################
 # GDM-HDR The Hierarchical Dimension Reduction Technique
 class level():
@@ -196,9 +195,6 @@ def initialize_calculation(T, Data, gsize, par_train):
             i = i+1
     Data_reduced = T.traverse_tree(par_train);
     return Data_reduced, T
-
-
-
 ############################################################################
 ##  Correlation Calculation
 #############################################################################

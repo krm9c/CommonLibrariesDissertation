@@ -1,23 +1,37 @@
 ####################################################################
 # Big Data Analysis
-# Library  2.0 version
-##########################################################################
+####################################################################
 import random
 import os,sys
 import numpy as np
 import warnings
 import tflearn
 with warnings.catch_warnings():
-	warnings.filterwarnings("ignore",category=DeprecationWarning)
+	warnings.filterwarnings("ignore",\
+	category=DeprecationWarning)
 	from   sklearn import preprocessing
 from sklearn.datasets import  make_classification
-############################################################################
-# Set path for the data too
-path = "/Users/krishnanraghavan/Documents/Data-case-study-1"
-sys.path.append('/Users/krishnanraghavan/Dropbox/Work/Research/Common_Libraries')
-sys.path.append('/Users/krishnanraghavan/Dropbox/Work/Research/Paper_1_codes')
-sys.path.append('/Users/krishnanraghavan/Dropbox/Work/Research/Paper_2_codes')
-from Library_Paper_one  import import_data, traditional_MTS
+####################################################################
+# Set path
+path = '/Users/krishnanraghavan/Documents/Research/Data/'
+sys.path.append('/Users/krishnanraghavan/Documents/ \
+Research/CommonLibrariesDissertation')
+####################################################################
+# import an excel file
+def returnxl_numpy(filename, sheet):
+    import xlrd
+    #Open a workbook
+    workbook  = xlrd.open_workbook(filename)
+    worksheet = workbook.sheet_by_name(sheet)
+    num_rows  = worksheet.nrows
+    num_cells = worksheet.ncols
+    # Declare a numpy array
+    tempxl=np.zeros((num_rows,num_cells))
+    #Store data on the numpy array
+    for curr_row in range(0,num_rows):
+        for curr_cell in range(0,num_cells):
+            tempxl[curr_row,curr_cell] = worksheet.cell_value(curr_row, curr_cell)
+    return tempxl
 ###################################################################################
 # Global infinite loop of data
 def Inf_Loop_data(par, That, Yhat, classes):
@@ -41,62 +55,58 @@ def Bearing_Samples(path, sample_size, randfile):
 		File = File_2
 	else:
 		File = File_3
-
 	for f in File:
 		filename = os.path.join(path,f);
 		if f.startswith('NL'):
 			sheet='Test';
-			temp=np.array(import_data(filename,sheet, 1));
+			temp=np.array(returnxl_numpy(filename,sheet));
 			for i in range(0,sample_size):
 				rand[i]= random.randint(0,(temp.shape[0]-1))
 			CurrentFileNL = temp[rand,:];
-
 		if f.startswith('IR'):
 			sheet='Test'
-			temp = import_data(filename,sheet, 1);
+			temp = returnxl_numpy(filename,sheet);
 			for i in range(0,sample_size):
 				rand[i]= random.randint(0,(temp.shape[0]-1))
 			CurrentFileIR = temp[rand,:]
-
 		if f.startswith('OR'):
 			sheet='Test'
-			temp = import_data(filename,sheet, 1);
+			temp = returnxl_numpy(filename,sheet);
 			for i in range(0,sample_size):
 				rand[i]= random.randint(0,(temp.shape[0]-1));
 			CurrentFileOR = temp[rand,:];
-
 		if f.startswith('Normal'):
 			sheet='normal';
-			temp = import_data(filename,sheet, 1);
+			temp = returnxl_numpy(filename,sheet);
 			for i in range(0,sample_size):
 				rand[i]= random.randint(0,(temp.shape[0]-1))
 			CurrentFilenorm = temp[rand,:];
     #  We end this function by returning all the arrays and the fault centroids
-	return (np.concatenate(( CurrentFileNL, CurrentFileIR, CurrentFileOR, CurrentFilenorm \
-	))), tflearn.data_utils.to_categorical( np.concatenate(( (np.zeros(CurrentFilenorm.shape[0])),\
-	  (np.zeros(CurrentFileNL.shape[0])+1), (np.zeros(CurrentFileIR.shape[0])+2),\
-	   (np.zeros( CurrentFileOR.shape[0])+3)) ), 4)
-
+	return(np.concatenate((CurrentFileNL, CurrentFileIR, CurrentFileOR, CurrentFilenorm))), np.concatenate((\
+	(np.zeros(CurrentFilenorm.shape[0])+1),\
+	(np.zeros(CurrentFileNL.shape[0])+2),\
+	(np.zeros(CurrentFileIR.shape[0])+3),\
+	(np.zeros( CurrentFileOR.shape[0])+4)))
+##########################################################################
 # Time Based sampling
 def Bearing_Non_Samples_Time(path, num, classes):
 	sheet    = 'Test';
 	f        = 'IR'+str(num)+'.xls'
 	filename =  os.path.join(path,f);
-	print filename
-	Temp_IR  =  np.array(import_data(filename,sheet, 1));
+	Temp_IR  =  np.array(returnxl_numpy(filename,sheet));
 	f        = 'OR'+str(num)+'.xls'
 	filename =  os.path.join(path,f);
-	Temp_OR  =  np.array(import_data(filename,sheet, 1));
+	Temp_OR  =  np.array(returnxl_numpy(filename,sheet));
 	f        = 'NL'+str(num)+'.xls'
 	filename =  os.path.join(path,f);
-	Temp_NL  =  np.array(import_data(filename,sheet, 1));
+	Temp_NL  =  np.array(returnxl_numpy(filename,sheet));
 	sheet    = 'normal';
 	f        = 'Normal_'+str(1)+'.xls'
 	filename = os.path.join(path,f);
-	Temp_Norm= np.array(import_data(filename,sheet, 1));
+	Temp_Norm= np.array(returnxl_numpy(filename,sheet));
 	T = np.concatenate((Temp_Norm, Temp_NL, Temp_IR, Temp_OR))
-	Y = np.concatenate((np.zeros(Temp_Norm.shape[0]), np.zeros(Temp_NL.shape[0])+1, np.zeros(Temp_IR.shape[0])+2, np.zeros(Temp_OR.shape[0])+3))
-	return T,tflearn.data_utils.to_categorical(Y, classes)
+	Y = np.concatenate((np.zeros(Temp_Norm.shape[0])+1, np.zeros(Temp_NL.shape[0])+2, np.zeros(Temp_IR.shape[0])+3, np.zeros(Temp_OR.shape[0])+4))
+	return T,Y
 ###################################################################################
 # Artificial Dataset import
 def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
@@ -115,7 +125,7 @@ def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
 	Data_class_4 = X[index_4,:]
 	T = np.concatenate((Data_class_1, Data_class_2, Data_class_3, Data_class_4))
 	Y = np.concatenate((L1, L2, L3, L4))
-	return T, tflearn.data_utils.to_categorical(Y, classes)
+	return T, Y
 ########################################################################################
 def Data_MNIST():
 	# Standard scientific Python imports
@@ -138,17 +148,27 @@ def Data_MNIST():
 	# turn the data in a (samples, feature) matrix:
 	T = images.reshape((images.shape[0], -1))
 	Y = labels.reshape((labels.shape[0], -1))
-	return T, tflearn.data_utils.to_categorical(Y, 10)
+	return T, Y
+
+def sensorless(path_sensorless):
+	from sklearn.datasets import load_svmlight_file
+	data = load_svmlight_file(path_sensorless+"/sensorless.scale")
+	dense_vector = np.zeros((data[0].shape[0],data[0].shape[1]))
+	data[0].toarray(out = dense_vector)
+	return dense_vector, data[1]
 
 def DataImport(num, classes=4, file=0, sample_size = 1000, features = 100):
 	if num ==0:
-		# Import Artificial Data-set
 		That, Yhat = DataImport_Artificial(n_sam = sample_size, n_fea=features, n_inf=2, classes= classes)
-	elif num ==1:
-		#  Import Rolling Element Data
-		That, Yhat = Bearing_Non_Samples_Time(path, 1, classes)
+	elif num ==11:
+		path_roll = path + 'RollingElement'
+		That, Yhat = Bearing_Non_Samples_Time(path_roll, 1, classes)
+	elif num ==12:
+		path_roll = path + 'RollingElement'
+		That, Yhat = Bearing_Samples(path_roll, sample_size, 1)
 	elif num ==2:
-		That, Yhat = Bearing_Samples(path, sample_size, 1)
-	elif num ==3:
 		That, Yhat = Data_MNIST()
+	elif num ==3:
+		path_sensorless= path+ 'SensorLessDriveData-set'
+		That, Yhat = sensorless(path_sensorless)
 	return That, Yhat
