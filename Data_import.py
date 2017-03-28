@@ -1,6 +1,6 @@
-####################################################################
+###################################################################
 # Big Data Analysis
-####################################################################
+###################################################################
 import random
 import os,sys
 import numpy as np
@@ -83,10 +83,10 @@ def Bearing_Samples(path, sample_size, randfile):
 			CurrentFilenorm = temp[rand,:];
     #  We end this function by returning all the arrays and the fault centroids
 	return(np.concatenate((CurrentFileNL, CurrentFileIR, CurrentFileOR, CurrentFilenorm))), np.concatenate((\
-	(np.zeros(CurrentFilenorm.shape[0])+1),\
-	(np.zeros(CurrentFileNL.shape[0])+2),\
-	(np.zeros(CurrentFileIR.shape[0])+3),\
-	(np.zeros( CurrentFileOR.shape[0])+4)))
+	(np.zeros(CurrentFileNL.shape[0])+1),\
+	(np.zeros(CurrentFileIR.shape[0])+2),\
+	(np.zeros(CurrentFileOR.shape[0])+3),\
+	(np.zeros( CurrentFilenorm.shape[0])+4)))
 ##########################################################################
 # Time Based sampling
 def Bearing_Non_Samples_Time(path, num, classes):
@@ -104,8 +104,8 @@ def Bearing_Non_Samples_Time(path, num, classes):
 	f        = 'Normal_'+str(1)+'.xls'
 	filename = os.path.join(path,f);
 	Temp_Norm= np.array(returnxl_numpy(filename,sheet));
-	T = np.concatenate((Temp_Norm, Temp_NL, Temp_IR, Temp_OR))
-	Y = np.concatenate((np.zeros(Temp_Norm.shape[0])+1, np.zeros(Temp_NL.shape[0])+2, np.zeros(Temp_IR.shape[0])+3, np.zeros(Temp_OR.shape[0])+4))
+	T = np.concatenate((Temp_NL, Temp_IR, Temp_OR, Temp_Norm))
+	Y = np.concatenate((np.zeros(Temp_NL.shape[0])+1, np.zeros(Temp_IR.shape[0])+2, np.zeros(Temp_OR.shape[0])+3, np.zeros(Temp_Norm.shape[0])+4))
 	return T,Y
 ###################################################################################
 # Artificial Dataset import
@@ -159,7 +159,7 @@ def sensorless(path_sensorless):
 
 def DataImport(num, classes=4, file=0, sample_size = 1000, features = 100):
 	if num ==0:
-		That, Yhat = DataImport_Artificial(n_sam = sample_size, n_fea=features, n_inf=2, classes= classes)
+		That, Yhat = DataImport_Artificial(n_sam = sample_size, n_fea=((2*classes)+features), n_inf=(2*classes), classes= classes)
 	elif num ==11:
 		path_roll = path + 'RollingElement'
 		That, Yhat = Bearing_Non_Samples_Time(path_roll, 1, classes)

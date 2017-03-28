@@ -26,9 +26,9 @@ def traditional_MTS(Norm, T, par):
     column_normal = Norm.shape[1];
     row_test      = T.shape[0];
     column_test   = T.shape[1];
-    scalar        =  preprocessing.StandardScaler(with_mean=False, with_std = True ).fit(Norm)
-    N_scaled      =  scalar.transform(Norm)
-    T_scaled      =  scalar.transform(T);
+    #scalar        =  preprocessing.StandardScaler().fit(Norm)
+    N_scaled      =  Norm
+    T_scaled      =  T;
     # Since we have the parameters now today, lets start with the transformation..
     mean_test=[]
     for i in range(0 , column_test):
@@ -53,12 +53,12 @@ def traditional_MTS(Norm, T, par):
         for i in range (0,row_test):
             if ((np.dot(np.dot((T_scaled[i,:]-mn),Inverse_correlation),(T_scaled[i,:]-mn).transpose())) < 0):
                 print ("problem")
-            MD_test[i] = np.linalg.norm(np.dot((T_scaled[i,:]-mn),np.linalg.cholesky(Inverse_correlation)), 0.5);
+            MD_test[i] = np.linalg.norm(np.dot((T_scaled[i,:]-mn),np.linalg.cholesky(Inverse_correlation)), 1);
     else:
         # Correlation matrix
         Correlation_Matrix=np.corrcoef(np.transpose(N_scaled));
         Inverse_correlation=np.linalg.inv(Correlation_Matrix);
         # Calculate the value of the MD
         for i in range (0,row_test):
-                MD_test[i]=np.linalg.norm(np.dot((mt-mn),np.linalg.cholesky(Inverse_correlation)), 0.5);
+                MD_test[i]=np.linalg.norm(np.dot((mt-mn),np.linalg.cholesky(Inverse_correlation)), 1);
     return MD_test

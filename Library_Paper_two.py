@@ -322,7 +322,7 @@ def Dist_corr(X):
             nu_xx = Fast_Distance_Covariance(x, x)
             nu_yy = Fast_Distance_Covariance(y, y)
             if nu_xy*nu_xx*nu_yy < 1e-5:
-                C[i][j] = 0.0
+                C[i][j] = 1e-3
             else:
                 C[i][j] = sqrt(nu_xy)/float(sqrt(sqrt(nu_xx)*sqrt(nu_yy)))
     return C
@@ -332,7 +332,7 @@ def Dist_Corr_Pooled(Data, batch_size):
     m = Data.shape[0]
     n = Data.shape[1]
     C = np.zeros((n, n))
-    for i in range(m/batch_size):
+    for i in range(200):
         #print "batch--", i
         idx = rng.randint(len(Data), size=batch_size)
         P = Data[idx, :]
@@ -348,7 +348,7 @@ def Dist_Corr_Pooled(Data, batch_size):
                 dcorxy = Fast_Distance_Covariance(x,y)
                 # print sqrt(dcorxy)
                 if dcorxy*dcorxx*dcoryy <1e-05:
-                    C[i][j] = C[i][j]+0.0
+                    C[i][j] = C[i][j]+1e-3
                 else:
                     C[i][j] = C[i][j]+(float(batch_size-1)*(sqrt(dcorxy)/float(sqrt(sqrt(dcorxx)*sqrt(dcoryy)))))
     return  (C/float(m-(m/(batch_size))))
@@ -358,7 +358,7 @@ def Pearson_Corr(Data, batch_size):
     m = Data.shape[0]
     n = Data.shape[1]
     C = np.zeros((n, n))
-    for i in range(m/batch_size):
+    for i in range(200):
         idx = rng.randint(len(Data), size=batch_size)
         P = Data[idx, :]
         for i in xrange(n):
