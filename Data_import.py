@@ -6,6 +6,7 @@ import os,sys
 import numpy as np
 import warnings
 import tflearn
+import math
 with warnings.catch_warnings():
 	warnings.filterwarnings("ignore",\
 	category=DeprecationWarning)
@@ -13,9 +14,9 @@ with warnings.catch_warnings():
 from sklearn.datasets import  make_classification
 ####################################################################
 # Set path
-path = '/Users/krishnanraghavan/Documents/Research/Data/'
-sys.path.append('/Users/krishnanraghavan/Documents/ \
-Research/CommonLibrariesDissertation')
+path = '../data/'
+sys.path.append('../CommonLibrariesDissertation')
+
 ####################################################################
 # import an excel file
 def returnxl_numpy(filename, sheet):
@@ -32,10 +33,8 @@ def returnxl_numpy(filename, sheet):
         for curr_cell in range(0,num_cells):
             tempxl[curr_row,curr_cell] = worksheet.cell_value(curr_row, curr_cell)
     return tempxl
-###################################################################################
-# Global infinite loop of data
-def Inf_Loop_data(par, That, Yhat, classes):
-		return (That + 0.1*np.random.normal(0, 0.1, (That.shape[0], That.shape[1])) ), tflearn.data_utils.to_categorical(Yhat, classes)
+
+
 ###################################################################################
 # Rolling Element Bearing Dataset
 # Bootstrap sampling
@@ -79,16 +78,53 @@ def Bearing_Samples(path, sample_size, randfile):
 			sheet='normal';
 			temp = returnxl_numpy(filename,sheet);
 			for i in range(0,sample_size):
-				rand[i]= random.randint(0,(temp.shape[0]-1))
+				rand[i]= random.randint(0,(temp.shape[0]-1));
 			CurrentFilenorm = temp[rand,:];
-    #  We end this function by returning all the arrays and the fault centroids
-	return(np.concatenate((CurrentFileNL, CurrentFileIR, CurrentFileOR, CurrentFilenorm))), np.concatenate((\
-	(np.zeros(CurrentFileNL.shape[0])+1),\
-	(np.zeros(CurrentFileIR.shape[0])+2),\
-	(np.zeros(CurrentFileOR.shape[0])+3),\
-	(np.zeros( CurrentFilenorm.shape[0])+4)))
-##########################################################################
-# Time Based sampling
+	T = np.concatenate((CurrentFileNL, CurrentFileIR, CurrentFileOR, CurrentFileNorm))
+	Y = np.concatenate((np.zeros(CurrentFileNL.shape[0])+1, np.zeros(CurrentFileIR.shape[0])+2, np.zeros(CurrentFileOR.shape[0])+3, np.zeros(CurrentFileNorm.shape[0])+4))
+	return T, y
+
+
+
+def data_PHM08(path_phm08):
+	temp_data_class_1 = []
+	temp_data_class_2 = []
+	Train_temp = np.loadtxt(path_phm08+'/train.txt')
+	for i in xrange(1,219):
+		index = [j for j,v in enumerate(Train_temp[:,0]) if v == i ]
+		temp = Train_temp[index,:]
+		temp_data_class_1.extend( temp[  0: int(math.ceil( (50/float(100))*temp.shape[0])) , 5:temp.shape[1] ])
+		temp_data_class_2.extend( temp[  int(math.ceil( (50/float(100))*temp.shape[0]))+1:temp.shape[0] , 5:temp.shape[1] ])
+
+	temp_data =[]
+	temp_data.extend(temp_data_class_1)
+	temp_data.extend(temp_data_class_2)
+	y_train = np.concatenate( (np.zeros( len(temp_data_class_1) )+1, np.zeros( len(temp_data_class_2) )+2) )
+	X_train = np.array(temp_data)
+
+	temp_data_class_1 = []
+	temp_data_class_2 = []
+	Test_temp = np.loadtxt(path_phm08+'/test.txt')
+	for i in xrange(1,219):
+		index = [j for j,v in enumerate(Test_temp[:,0]) if v == i ]
+		temp = Test_temp[index,:]
+		temp_data_class_1.extend( temp[  0: int(math.ceil( (50/float(100))*temp.shape[0])) , 5:temp.shape[1] ])
+		temp_data_class_2.extend( temp[  int(math.ceil( (50/float(100))*temp.shape[0]))+1: temp.shape[0] , 5:temp.shape[1] ])
+	temp_data =[]
+	temp_data.extend(temp_data_class_1)
+	temp_data.extend(temp_data_class_2)
+	y_test = np.concatenate( (np.zeros( len(temp_data_class_1) )+1, np.zeros( len(temp_data_class_2) )+2) )
+	X_test = np.array(temp_data)
+	T = np.concatenate((X_train, X_test))
+	print T.shape
+	Y = np.concatenate((y_train, y_test))
+	print Y.shape
+	P = list(np.random.permutation(T.shape[0]))
+	y = Y[P]
+	T = T[P,:]
+	return T, y
+
+
 def Bearing_Non_Samples_Time(path, num, classes):
 	sheet    = 'Test';
 	f        = 'IR'+str(num)+'.xls'
@@ -107,6 +143,8 @@ def Bearing_Non_Samples_Time(path, num, classes):
 	T = np.concatenate((Temp_NL, Temp_IR, Temp_OR, Temp_Norm))
 	Y = np.concatenate((np.zeros(Temp_NL.shape[0])+1, np.zeros(Temp_IR.shape[0])+2, np.zeros(Temp_OR.shape[0])+3, np.zeros(Temp_Norm.shape[0])+4))
 	return T,Y
+
+
 ###################################################################################
 # Artificial Dataset import
 def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
@@ -126,6 +164,7 @@ def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
 	T = np.concatenate((Data_class_1, Data_class_2, Data_class_3, Data_class_4))
 	Y = np.concatenate((L1, L2, L3, L4))
 	return T, Y
+
 ########################################################################################
 def Data_MNIST():
 	# Standard scientific Python imports
@@ -150,14 +189,17 @@ def Data_MNIST():
 	Y = labels.reshape((labels.shape[0], -1))
 	return T, Y
 
+
 def sensorless(path_sensorless):
 	from sklearn.datasets import load_svmlight_file
-	data = load_svmlight_file(path_sensorless+"/sensorless.scale")
+	data = load_svmlight_file(path_sensorless+"/Sensorless.scale")
 	dense_vector = np.zeros((data[0].shape[0],data[0].shape[1]))
 	data[0].toarray(out = dense_vector)
 	return dense_vector, data[1]
 
-def DataImport(num, classes=4, file=0, sample_size = 1000, features = 100):
+
+
+def DataImport(num, classes=10, file=0, sample_size = 10000, features = 200):
 	if num ==0:
 		That, Yhat = DataImport_Artificial(n_sam = sample_size, n_fea=((2*classes)+features), n_inf=(2*classes), classes= classes)
 	elif num ==11:
@@ -169,6 +211,10 @@ def DataImport(num, classes=4, file=0, sample_size = 1000, features = 100):
 	elif num ==2:
 		That, Yhat = Data_MNIST()
 	elif num ==3:
-		path_sensorless= path+ 'SensorLessDriveData-set'
+		path_sensorless= path+ 'Sensorless'
 		That, Yhat = sensorless(path_sensorless)
+	elif num ==4:
+		path_phm08 = path+'PHM08'
+		That, Yhat = data_PHM08(path_phm08)
+
 	return That, Yhat

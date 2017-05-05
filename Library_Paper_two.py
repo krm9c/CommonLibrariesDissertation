@@ -1,7 +1,8 @@
 ####################################################################
 # Big Data Analysis
 # Library  2.0 version
-##########################################################################
+####################################################################
+
 import random
 import os,sys
 from   math                            import *
@@ -19,6 +20,8 @@ class level():
         def __init__(self):
                 self.total_level=0
                 self.tree_levels=[]
+
+
 #####################################################################
 # Class definition for the nodes, so the representation is mdtree=(node,level)
         class my_tree_node():
@@ -38,37 +41,28 @@ class level():
 	##########################################################################
 	# This function essentially generates all the groups in the tree
         def generate_group(self,level_list,gsize):
+
+            # Declare Temporary variables
             temp  = []
             group_list = []
             node_count = -1
             if (len(level_list))==1:
                 return temp;
             vargroup=0
-            if (gsize == 1):
-                print ("Size of the  level is", len(level_list))
-                Gsize = input("Enter Group Size");
-                vargroup=input("If you want to vary within a level, enter 1");
-            else:
-                Gsize=gsize;
+            Gsize=gsize;
             g=0;
             while (node_count < len(level_list)-1):
                 g=0;
                 group_list=[]
-                if vargroup==1:
-                    print ("Current groupings are ", temp)
-                    print  ("Total number of elements left ", (len(level_list)-node_count));
-                    Gsize= input("size of this group")
                 while (g < Gsize) and (node_count < len(level_list)-1):
                     node_count=node_count+1;
                     group_list.append(level_list[node_count].number)
-                    #print "The value of s in this loop is", s;
                     g=g+1;
+
                 if ((len(level_list)-node_count-1)==1):
                     group_list.append(level_list[len(level_list)-1].number)
                     node_count = node_count+1;
-                #print "The array that is being appended", s;
                 temp.append(group_list);
-            # print "The array going out is", temp;
             return temp
     ##########################################################################
 	# Generate each level of the tree
@@ -85,18 +79,28 @@ class level():
             return temp_curr_level_list
 	##########################################################################
 	# Generate the overall tree.
-        def tree_generate(self, row, column, gsize):
+        def tree_generate(self, row, column, gsize, output_dimension):
                 curr_level_list=[]
                 prev_level_list=[]
                 tree=level()
                 # For all the leaf nodes in the tree, let us initialize the connection as zero
                 for i in xrange(0,column):
                     prev_level_list.append(0)
-                # Start making connection upwards
+                flag = 0
                 while len(prev_level_list)>=1:
                     curr_level_list= self.generate_level(len(prev_level_list),prev_level_list, row)
                     prev_level_list = []
                     prev_level_list= self.generate_group(curr_level_list,gsize)
+
+                    if flag ==1:
+                        tree.tree_levels.append(curr_level_list)
+                        break
+
+                    if len(prev_level_list) <= output_dimension:
+                        s = [item for sublist in prev_level_list for item in sublist ]
+                        prev_level_list =[]
+                        prev_level_list.append(s)
+                        flag =  1
                     tree.tree_levels.append(curr_level_list)
                 return tree
     # The next three functions do the job of performing all th calculations.
@@ -114,11 +118,12 @@ class level():
                     temp_scalar = preprocessing.StandardScaler(with_mean = False, with_std = True).fit(D_untransformed)
                     D_scaled = temp_scalar.transform(D_untransformed)
                 # Get the transformation parameters and store them
-                if level_flag < 2:
+                if level_flag is not 2:
                     if Paper =='paper_1':
-                        dist_Corr = Pearson_Corr(D_scaled, 100)
+                        dist_Corr = Pearson_Corr(D_scaled)
                     else:
-                        dist_Corr =  Dist_Corr_Pooled(D_scaled, 100)
+                        dist_Corr =  Dist_Corr(D_scaled)
+
                     Transform_array =  np.zeros((row_test, 1))
                     from scipy import linalg as LA
                     e_vals, e_vecs = LA.eig(dist_Corr)
@@ -127,11 +132,13 @@ class level():
                     pc = eig_pairs[0][1].reshape(column_test,1)
                     Transform_array= np.array([np.dot(D_untransformed[i,:], pc) for i in xrange(row_test)])
                     return Transform_array, pc, temp_scalar
-                elif level_flag ==2:
+                elif level_flag == 2:
                     return D_untransformed, None, temp_scalar
             except np.linalg.linalg.LinAlgError as err:
                     print ("Linalg error occured, Error")
                     exit()
+
+
 ###############################################################################
         def calc_transformation(self, D_untransformed, level_flag, Transformer, scaler):
             try:
@@ -146,22 +153,23 @@ class level():
             except np.linalg.linalg.LinAlgError as err:
                 print ("Linalg error occured, Error")
                 exit()
+
+
 ###########################################################################
 # Traverse each node of the tree
 # Function 15
         def traverse_tree(Tree, store_par):
             # Loop through all the levels in the tree first.
             for i in xrange(1,len(Tree.tree_levels)):
-                if (i==1):
-                    level_flag   = 0;
-                elif i == (len(Tree.tree_levels)-1):
+                if (i == (len(Tree.tree_levels))-1):
                     level_flag   = 2;
                 else:
-                    level_flag   = 1;
+                    level_flag = 213;
+                # Go throught the groups now
                 for group in Tree.tree_levels[i]:
                     group_connectivity=group.connected_nodes
-                    temp=group_connectivity[0]
-                    D_untransformed = np.zeros((Tree.tree_levels[1][2].Transformed.shape[0] , len(temp)))
+                    temp = group_connectivity[0]
+                    D_untransformed = np.zeros((group.Transformed.shape[0] , len(temp)))
                     var=0
                     for element in group_connectivity:
                         for e in element:
@@ -176,16 +184,18 @@ class level():
                         if level_flag == 2:
                             Data_reduced = group.Transformed
             return Data_reduced
+
+
 ###########################################################################
 # This is where the tree generation and the transformation is called
-def initialize_calculation(T, Data, gsize, par_train):
+def initialize_calculation(T, Data, gsize, par_train, output_dimension):
     # Part -- 1, Generation of the tree parameters
     row    = Data.shape[0];
     column = Data.shape[1];
     if par_train == 0 :
         # Generate the tree and groups
         T =  level()
-        T =  T.tree_generate(row, column,  gsize)
+        T =  T.tree_generate(row, column,  gsize, output_dimension)
     # Part -- 2, Calculate parameters at every level and store.
     i = 0
     T.resize(row)
@@ -195,6 +205,8 @@ def initialize_calculation(T, Data, gsize, par_train):
             i = i+1
     Data_reduced = T.traverse_tree(par_train);
     return Data_reduced, T
+
+
 ############################################################################
 ##  Correlation Calculation
 #############################################################################
@@ -209,6 +221,8 @@ def pcc(X, Y):
    Y /= Y.std(0)
    # Compute mean product
    return np.mean(X*Y)
+
+
 ########################################################
 # calculate Partial Sum
 def partialsum(Px,Py,Pc):
@@ -246,6 +260,7 @@ def partialsum(Px,Py,Pc):
         #Gamma[i] = np.sum([Pc[j] for j in xrange(0,i) if Py[j] < Py[i]])
     G = cdot - Pc - 2*sumtemp - 2*sumc + 4*Gamma
     return G[Index_store_x]
+
 ###########################################################################
 # Fast Distance Covariance
 def Fast_Distance_Covariance(X, Y):
@@ -308,16 +323,20 @@ def Fast_Distance_Covariance(X, Y):
     P22 = (2/float(n*(n-2)*(n-3)))*np.sum(P2)
     P33 = (1/float(n*(n-1)*(n-2)*(n-3)))*(P3)
     return (P11-P22+P33)
+
 ###########################################################################
  ## Code a fast algorithm for calculating distance covariance..
-def Dist_corr(X):
+def Dist_Corr(X):
     n  = X.shape[0];
     m  = X.shape[1];
     C  = np.zeros((m,m));
+    rng = np.random.RandomState(0)
+    idx = rng.randint(n, size=1000)
+    P = X[idx, :]
     for i in range(m):
         for j in range(m):
-            x = X[:,i]
-            y = X[:,j]
+            x = P[:,i]
+            y = P[:,j]
             nu_xy = Fast_Distance_Covariance(x, y)
             nu_xx = Fast_Distance_Covariance(x, x)
             nu_yy = Fast_Distance_Covariance(y, y)
@@ -326,44 +345,11 @@ def Dist_corr(X):
             else:
                 C[i][j] = sqrt(nu_xy)/float(sqrt(sqrt(nu_xx)*sqrt(nu_yy)))
     return C
-###########################################################################
-def Dist_Corr_Pooled(Data, batch_size):
-    rng = np.random.RandomState(0)
-    m = Data.shape[0]
-    n = Data.shape[1]
-    C = np.zeros((n, n))
-    for i in range(200):
-        #print "batch--", i
-        idx = rng.randint(len(Data), size=batch_size)
-        P = Data[idx, :]
-        for i in xrange(n):
-            for j in xrange(n):
-                x = P[:,i]
-                y = P[:,j]
-                dcoryy = Fast_Distance_Covariance(y,y)
-                # print dcoryy
-                # print sqrt(dcoryy)
-                dcorxx = Fast_Distance_Covariance(x,x)
-                # print sqrt(dcoryy)
-                dcorxy = Fast_Distance_Covariance(x,y)
-                # print sqrt(dcorxy)
-                if dcorxy*dcorxx*dcoryy <1e-05:
-                    C[i][j] = C[i][j]+1e-3
-                else:
-                    C[i][j] = C[i][j]+(float(batch_size-1)*(sqrt(dcorxy)/float(sqrt(sqrt(dcorxx)*sqrt(dcoryy)))))
-    return  (C/float(m-(m/(batch_size))))
+
 ##############################################################################
-def Pearson_Corr(Data, batch_size):
+def Pearson_Corr(Data):
     rng = np.random.RandomState(0)
     m = Data.shape[0]
     n = Data.shape[1]
-    C = np.zeros((n, n))
-    for i in range(200):
-        idx = rng.randint(len(Data), size=batch_size)
-        P = Data[idx, :]
-        for i in xrange(n):
-            for j in xrange(n):
-                x = P[:,i]
-                y = P[:,j]
-                C[i][j] = C[i][j]+(float(batch_size-1)*pcc(x, y))
-    return  (C/float(m-(m/(batch_size))))
+    idx = rng.randint(len(Data), size=500)
+    return np.corrcoef(np.transpose(Data[idx,:]))
