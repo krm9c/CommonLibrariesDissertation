@@ -7,6 +7,7 @@ import numpy as np
 import warnings
 import tflearn
 import math
+import gzip, cPickle
 with warnings.catch_warnings():
 	warnings.filterwarnings("ignore",\
 	category=DeprecationWarning)
@@ -16,7 +17,6 @@ from sklearn.datasets import  make_classification
 # Set path
 path = '../data/'
 sys.path.append('../CommonLibrariesDissertation')
-
 ####################################################################
 # import an excel file
 def returnxl_numpy(filename, sheet):
@@ -34,8 +34,6 @@ def returnxl_numpy(filename, sheet):
             tempxl[curr_row,curr_cell] = worksheet.cell_value(curr_row, curr_cell)
     return tempxl
 
-
-###################################################################################
 # Rolling Element Bearing Dataset
 # Bootstrap sampling
 def Bearing_Samples(path, sample_size, randfile):
@@ -84,8 +82,6 @@ def Bearing_Samples(path, sample_size, randfile):
 	Y = np.concatenate((np.zeros(CurrentFileNL.shape[0])+1, np.zeros(CurrentFileIR.shape[0])+2, np.zeros(CurrentFileOR.shape[0])+3, np.zeros(CurrentFileNorm.shape[0])+4))
 	return T, y
 
-
-
 def data_PHM08(path_phm08):
 	temp_data_class_1 = []
 	temp_data_class_2 = []
@@ -124,7 +120,6 @@ def data_PHM08(path_phm08):
 	T = T[P,:]
 	return T, y
 
-
 def Bearing_Non_Samples_Time(path, num, classes):
 	sheet    = 'Test';
 	f        = 'IR'+str(num)+'.xls'
@@ -144,8 +139,6 @@ def Bearing_Non_Samples_Time(path, num, classes):
 	Y = np.concatenate((np.zeros(Temp_NL.shape[0])+1, np.zeros(Temp_IR.shape[0])+2, np.zeros(Temp_OR.shape[0])+3, np.zeros(Temp_Norm.shape[0])+4))
 	return T,Y
 
-
-###################################################################################
 # Artificial Dataset import
 def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
 	X,y = make_classification(n_samples = n_sam, n_features = n_fea, n_informative = n_inf, n_redundant = (n_fea-n_inf), n_classes = classes, n_clusters_per_class = 1, class_sep = 1, hypercube = True, shuffle = True, random_state = 9000)
@@ -165,30 +158,15 @@ def DataImport_Artificial(n_sam, n_fea, n_inf, classes):
 	Y = np.concatenate((L1, L2, L3, L4))
 	return T, Y
 
-########################################################################################
 def Data_MNIST():
-	# Standard scientific Python imports
-	import matplotlib.pyplot as plt
-	# Import datasets, classifiers and performance metrics
-	from sklearn import datasets, svm, metrics
-	# Import numpy
-	import numpy as np
-	# The digits dataset
-	digits = datasets.load_digits()
-	# The data that we are interested in is made of 8x8 images of digits, let's
-	# have a look at the first 4 images, stored in the `images` attribute of the
-	# dataset.  If we were working from image files, we could load them using
-	# matplotlib.pyplot.imread.  Note that each image must have the same size. For these
-	# images, we know which digit they represent: it is given in the 'target' of
-	# the dataset.
-	images = np.array(digits.images)
-	labels = np.array(digits.target)
-	# To apply a classifier on this data, we need to flatten the image, to
-	# turn the data in a (samples, feature) matrix:
-	T = images.reshape((images.shape[0], -1))
-	Y = labels.reshape((labels.shape[0], -1))
-	return T, Y
+	from keras.datasets import mnist
+	(x_train, y_train), (x_test, y_test) = mnist.load_data()
+	return np.concatenate((x_train, x_test)), np.concatenate((y_train, y_test))
 
+def CIFAR_10():
+	from keras.datasets import cifar10
+	(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+	return np.concatenate((x_train, x_test)), np.concatenate((y_train, y_test))
 
 def sensorless(path_sensorless):
 	from sklearn.datasets import load_svmlight_file
@@ -197,18 +175,46 @@ def sensorless(path_sensorless):
 	data[0].toarray(out = dense_vector)
 	return dense_vector, data[1]
 
+def CIFAR100():
+	from keras.datasets import cifar100
+	(x_train, y_train), (x_test, y_test) = cifar100.load_data(label_mode='fine')
+	return np.concatenate((x_train, x_test)), np.concatenate((y_train, y_test))
 
+def gas_array(path_gas):
+    import numpy as np
+    import random
+    File_array = ['Acetone', 'Ammonia', 'CO', 'CO_4000', 'Ethylene', 'Methane', 'Methanol', 'Toluene']
+    import os, sys
+    Temp = []
+    Temp_y = []
+    i = 0
+    for element in File_array:
+        P = np.loadtxt(path_gas+'/'+element+'.csv', delimiter = ',' )
+        print P.shape
+        Temp.extend(P)
+        i = i+1
+        Temp_y.extend(np.zeros((P.shape[0],1))+i)
+    return np.array(Temp), np.array(Temp_y)
+
+def load_data_pickle(dataset):
+	f = gzip.open('../data/'+dataset+'.pkl.gz','rb')
+	dataset = cPickle.load(f)
+	X_train = dataset[0]
+	X_test  = dataset[1]
+	y_train = dataset[2]
+	y_test  = dataset[3]
+	return X_train, y_train, X_test, y_test
 
 def DataImport(num, classes=10, file=0, sample_size = 10000, features = 200):
-	if num ==0:
+	if num ==1:
 		That, Yhat = DataImport_Artificial(n_sam = sample_size, n_fea=((2*classes)+features), n_inf=(2*classes), classes= classes)
-	elif num ==11:
+	elif num ==21:
 		path_roll = path + 'RollingElement'
 		That, Yhat = Bearing_Non_Samples_Time(path_roll, 1, classes)
-	elif num ==12:
+	elif num ==22:
 		path_roll = path + 'RollingElement'
 		That, Yhat = Bearing_Samples(path_roll, sample_size, 1)
-	elif num ==2:
+	elif num ==5:
 		That, Yhat = Data_MNIST()
 	elif num ==3:
 		path_sensorless= path+ 'Sensorless'
@@ -216,5 +222,10 @@ def DataImport(num, classes=10, file=0, sample_size = 10000, features = 200):
 	elif num ==4:
 		path_phm08 = path+'PHM08'
 		That, Yhat = data_PHM08(path_phm08)
-
+	elif num ==6:
+		That, Yhat = CIFAR_10()
+	elif num ==7:
+		That, Yhat = CIFAR100()
+	elif num ==8:
+		That, Yhat = gas_array(path+'Gas')
 	return That, Yhat
